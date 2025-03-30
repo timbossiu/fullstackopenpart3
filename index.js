@@ -1,6 +1,9 @@
+require('dotenv').config()
+
 const express = require('express')
 const app = express()
 const morgan = require('morgan')
+const Person = require('./models/person')
 
 const cors = require('cors')
 
@@ -17,42 +20,16 @@ const PORT = process.env.PORT || 3001;
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time :body'))
 
-let persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(people => {
+        response.json(people)
+      })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    const id = request.params.id;
-    const person = persons.find(person => person.id === id);
-    if (person) {
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    }
-    else {
-        response.status(404).end();
-    }
+      })
 })
 
 app.get('/info', (request, response) => {
@@ -61,33 +38,20 @@ app.get('/info', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-    const body = request.body;
+    const body = request.body
 
-    if (!body.name || !body.number) {
-        return response.status(404).json({
-            error: 'name or number field missing'
-        })
-    }
+  if (!body.content || !body.number) {
+    return response.status(400).json({ error: 'missing one of those fields: name, number' })
+  }
 
-    const isNameExisting = persons.some(person => person.name === body.name);
+  const person = new Person({
+    name: body.name,
+    number: body.number
+  })
 
-    if (isNameExisting) {
-        return response.status(404).json({
-            error: `name ${body.name} is already available`
-        })
-    }
-
-    const id = Math.floor(Math.random() * 10000);
-
-    const person = {
-        id: id,
-        name: body.name,
-        number: body.number
-    }
-
-    persons = persons.concat(person);
-
-    response.json(persons)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
