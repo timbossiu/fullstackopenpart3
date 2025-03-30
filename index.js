@@ -40,7 +40,7 @@ app.get('/info', (request, response) => {
 app.post('/api/persons', (request, response) => {
     const body = request.body
 
-  if (!body.content || !body.number) {
+  if (!body.name || !body.number) {
     return response.status(400).json({ error: 'missing one of those fields: name, number' })
   }
 
